@@ -1,0 +1,39 @@
+test-installer:
+  stage: test
+  script:
+    - |
+      set +e
+      set -x
+
+      # usage
+      stdout=$(bash crucible-install.sh --help)
+      [[ "$stdout" = *"Usage"* ]]
+
+      # no args
+      ec=$(grep EC_FAIL_REGISTRY_UNSET= crucible-install.sh | cut -d '=' -f2)
+      bash crucible-install.sh
+      test "$?" = "$ec"
+
+      # missing auth-file arg
+      ec=$(grep EC_FAIL_AUTH_UNSET= crucible-install.sh | cut -d '=' -f2)
+      bash crucible-install.sh \
+          --registry myregistry.io/crucible
+      test "$?" = "$ec"
+
+      # auth file not found
+      ec=$(grep EC_AUTH_FILE_NOT_FOUND= crucible-install.sh | cut -d '=' -f2)
+      bash crucible-install.sh \
+          --registry myregistry.io/crucible \
+          --auth-file /tmp/auth-file.json
+      test "$?" = "$ec"
+
+      # default args
+      touch /tmp/auth-file.json
+      cfgfile=$(grep SYSCONFIG= crucible-install.sh | cut -d '=' -f2 | sed 's/"//g')
+      bash crucible-install.sh \
+          --registry myregistry.io/crucible \
+          --auth-file /tmp/auth-file.json
+      test "$?" = "0"
+      grep "myregistry.io" $cfgfile
+      grep "auth-file.json" $cfgfile
+
