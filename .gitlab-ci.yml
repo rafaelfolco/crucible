@@ -1,5 +1,6 @@
 test-installer:
   stage: test
+  image: centos:8
   script:
     - |
       set +e
